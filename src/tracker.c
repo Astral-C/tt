@@ -55,7 +55,7 @@ void tracker_close_mod(ModTracker* tracker){
 	if(tracker->module.patterns != NULL) free(tracker->module.patterns);
 
 	for(i = 0; i < 32; i++){
-		if(tracker->module.sample_data[i]){
+		if(tracker->module.sample_data[i] != NULL && tracker->module.samples[i].sample_length > 0){
 			free(tracker->module.sample_data[i]);
 		}
 	}
@@ -63,5 +63,5 @@ void tracker_close_mod(ModTracker* tracker){
 }
 
 void tracker_mod_tick(ModTracker* tracker){
-	
+
 }
