@@ -1,0 +1,14 @@
+# cmake stuff
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CMakeFiles
+
+# vscode
+.vscode
+
+# module files
+*.mod
+
+# executable
+tt
