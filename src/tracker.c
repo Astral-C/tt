@@ -121,7 +121,7 @@ void tracker_mod_tick(ModTracker* tracker){
 			if(tracker->current_row == 64){
 				tracker->current_row = 0;
 				tracker->current_pattern++;
-				if(tracker->current_pattern > tracker->module.pattern_count){
+				if(tracker->current_pattern > 128){
 					tracker->current_pattern = 0;
 				}
 			}
