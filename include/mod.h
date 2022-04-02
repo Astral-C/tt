@@ -3,12 +3,11 @@
 typedef struct __attribute__((packed)) {
     char name[22];
     uint16_t sample_length; //in u16s
-    uint8_t finetune; // First nybble should be blank, next is finetune
+    int8_t finetune; // First nybble should be blank, next is finetune
     uint8_t volume; //max is 64, 0x00 - 0x40
     uint16_t repeat_offset; //in u16s
     uint16_t repeat_length; //in u16s
 } MODSampleDef;
-
 
 typedef struct __attribute__((packed)) { //we don't want any padding, we are reading this directly from the file
     uint32_t rows[64][4]; //only supporting 4 channels for now
@@ -31,5 +30,5 @@ typedef struct {
     uint8_t pattern_count;
 
     MODPattern* patterns;
-    uint16_t* sample_data[31]; 
+    int16_t* sample_data[31]; 
 } MODFile;

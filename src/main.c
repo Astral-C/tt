@@ -1,11 +1,45 @@
 #include <stdio.h>
+#define MINIAUDIO_IMPLEMENTATION
+#include "miniaudio.h"
 #include "tracker.h"
+
+void update_player(ma_device* device, void* output, const void* input, ma_uint32 frame_count){
+	ModTracker* tracker;
+	tracker = (ModTracker*)device->pUserData;
+	//printf("requesting audio from %s...\r", tracker->module.module_name);
+
+	tracker_mod_update(tracker, output, frame_count);
+
+}
 
 int main(){
 	ModTracker tracker;
 
-	tracker_open_mod(&tracker, "mod.highspeed.mod");
-	printf("Finished loading data module...\n");
+	tracker_open_mod(&tracker, "test.mod");
+
+	ma_device_config config = ma_device_config_init(ma_device_type_playback);
+	config.playback.format = ma_format_s16;
+	config.playback.channels = 2;
+	config.sampleRate = 44100;
+	config.dataCallback = update_player;
+	config.pUserData = &tracker; //attach the tracker to the device as its userdata
+
+	tracker_mod_set_sample_rate(&tracker, config.sampleRate);
+
+	ma_device dev;
+	if(ma_device_init(NULL, &config, &dev) != MA_SUCCESS){
+		printf("Failed to open device\n");
+		return -1;
+	}
+
+	ma_device_start(&dev);
+
+	uint8_t quit = 0;
+	while(!quit){
+		quit = (getchar() == 'q');
+	}
+
+	ma_device_uninit(&dev);
 	tracker_close_mod(&tracker);
 
 	return 0;

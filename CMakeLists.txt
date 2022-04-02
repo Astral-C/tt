@@ -10,3 +10,4 @@ file(GLOB_RECURSE SOURCE
 )
 
 add_executable(tt ${SOURCE})
+target_link_libraries(tt m)
