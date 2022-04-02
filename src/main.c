@@ -14,7 +14,7 @@ void update_player(ma_device* device, void* output, const void* input, ma_uint32
 int main(){
 	ModTracker tracker;
 
-	tracker_open_mod(&tracker, "mod.highspeed.mod");
+	tracker_open_mod(&tracker, "spacedeb.mod");
 
 	ma_device_config config = ma_device_config_init(ma_device_type_playback);
 	config.playback.format = ma_format_s16;

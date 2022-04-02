@@ -3,12 +3,13 @@
 
 #include "mod.h"
 
+
 typedef struct {
     uint8_t instrument;
     uint8_t base_note;
     uint8_t volume;
-    double sample_offset;
     uint32_t period;
+    uint32_t sample_offset;
 } Channel;
 
 typedef struct {
