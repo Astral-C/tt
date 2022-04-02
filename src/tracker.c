@@ -1,7 +1,26 @@
-#include "tracker.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "tracker.h"
+
+//MOD Period Table
+
+static int16_t period_table[60] = {
+/*  C-0,  C#0,  D-0,  D#0,  E-0,  F-0,  F#0,  G-0,  G#0,  A-0,  A#0,  B-0, */
+    1712, 1616, 1524, 1440, 1356, 1280, 1208, 1140, 1076, 1016,  960,  906,
+	
+/*	C-1,  C#1,  D-1,  D#1,  E-1,  F-1,  F#1,  G-1,  G#1,  A-1,  A#1,  B-1, */
+	856,  808,  762,  720,  678,  640,  604,  570,  538,  508,  480,  453,
+	
+/*	C-2,  C#2,  D-2,  D#2,  E-2,  F-2,  F#2,  G-2,  G#2,  A-2,  A#2,  B-2, */
+	428,  404,  381,  360,  339,  320,  302,  285,  269,  254,  240,  226,
+
+/*	C-3,  C#3,  D-3,  D#3,  E-3,  F-3,  F#3,  G-3,  G#3,  A-3,  A#3,  B-3, */
+	214,  202,  190,  180,  170,  160,  151,  143,  135,  127,  120,  113,
+
+/*	C-4,  C#4,  D-4,  D#4,  E-4,  F-4,  F#4,  G-4,  G#4,  A-4,  A#4,  B-4, */
+	107,  101,   95,   90,   85,   80,   75,   71,   67,   63,   60,   56,
+};
 
 uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 	int i;
@@ -73,8 +92,8 @@ void tracker_mod_tick(ModTracker* tracker){
 		if(tracker->_current_ticks % tracker->speed == 0){
 			for (ch = 0; ch < 4; ch++){
 				note = tracker->module.patterns[tracker->current_pattern].rows[tracker->current_row][ch];
-				tracker->channels[ch].instrument = (note & 0x00F00000) >> 20; 
-				printf("Pattern %d Row %d Channel %d playing Instrument %x\n", tracker->current_pattern, tracker->current_row, ch, note);
+				tracker->channels[ch].instrument = (note & 0x000FF000) >> 12; 
+				tracker->channels[ch].period = (note & 0xFFF00000) >> 20; 
 				tracker->channels[ch].volume = tracker->module.samples[tracker->channels[ch].instrument].volume;
 			}
 			
@@ -110,23 +129,32 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 	Channel chan;
 
 	while(buff_ptr < buf_size){
+		samp_l = 0;
+		samp_r = 0;
 		tracker_mod_tick(tracker);
 
 		for (ch = 0; ch < 4; ch++){
 			//mix channel
-			double freq = 8363 * pow((1152 - 808/ 192), 2);
-			chan = tracker->channels[ch]; 
-			if(tracker->module.sample_data[chan.instrument] == NULL) continue;
-			samp_l += (tracker->module.sample_data[chan.instrument][(uint32_t)chan.sample_offset] - 128) * chan.volume;
-			samp_r += (tracker->module.sample_data[chan.instrument][(uint32_t)chan.sample_offset] - 128) * chan.volume;
+
+			chan = tracker->channels[ch];
+			if(chan.period >= 60 || chan.period == 0) continue;
+			double freq = 8363 * pow((1152 - period_table[chan.period - 1] / 192), 2);
+			if(tracker->module.sample_data[chan.instrument] == NULL || chan.sample_offset >= tracker->module.samples[chan.instrument].sample_length) continue;
 			
-			if(chan.sample_offset += (freq / 44100) >= tracker->module.samples[chan.instrument].sample_length){
+			printf("Mixing Channel %d\n", ch);
+
+			samp_l += (tracker->module.sample_data[chan.instrument][(int8_t)chan.sample_offset]) * chan.volume * 256;
+			samp_r += (tracker->module.sample_data[chan.instrument][(int8_t)chan.sample_offset]) * chan.volume * 256;
+			
+			if(chan.sample_offset += freq >= tracker->module.samples[chan.instrument].sample_length){
 				chan.sample_offset = tracker->module.samples[chan.instrument].repeat_offset;
 			}
+			printf("Finished Mixing Channel %d\n", ch);
 		}
 		
 		buffer[buff_ptr] = samp_r;
 		buffer[buff_ptr+1] = samp_l;
 		buff_ptr += 2;
+		//buff_ptr++;
 	} 
 }

@@ -1,3 +1,6 @@
+#ifndef __MOD_H__
+#define __MOD_H__
+
 #include <stdint.h>
 
 typedef struct __attribute__((packed)) {
@@ -30,5 +33,7 @@ typedef struct {
     uint8_t pattern_count;
 
     MODPattern* patterns;
-    uint16_t* sample_data[31]; 
+    int8_t* sample_data[31]; 
 } MODFile;
+
+#endif
