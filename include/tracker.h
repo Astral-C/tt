@@ -3,12 +3,13 @@
 typedef struct {
     uint8_t instrument;
     uint8_t base_note;
-    uint8_t sample_offset;
     uint8_t volume;
+    double sample_offset;
     uint32_t frequency;
 } Channel;
 
 typedef struct {
+    uint32_t _tick_timer;
     uint32_t _current_ticks;
     uint32_t _updates_per_tick;
 

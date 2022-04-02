@@ -30,5 +30,5 @@ typedef struct {
     uint8_t pattern_count;
 
     MODPattern* patterns;
-    int16_t* sample_data[31]; 
+    uint16_t* sample_data[31]; 
 } MODFile;

@@ -31,12 +31,14 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 	
 	fread(&tracker->module.patterns[0], sizeof(MODPattern), tracker->module.pattern_count, mod_file);
 
+	printf("Reading Samples at %x\n", ftell(mod_file));
+
 	//read sample data
 	for(i = 0; i < 32; i++){
 		MODSampleDef* def = &tracker->module.samples[i];
-		def->sample_length <<= 1;
-		def->repeat_offset <<= 1;
-		def->repeat_length <<= 1;
+		def->sample_length *= 2;
+		def->repeat_offset *= 2;
+		def->repeat_length *= 2;
 		def->finetune <<= 4;
 		//only read if the sample len is > 0
 		if(def->sample_length == 0) continue;
@@ -67,7 +69,7 @@ void tracker_mod_tick(ModTracker* tracker){
 	int ch;
 	uint32_t note;
 
-	if(tracker->_current_ticks >= tracker->_updates_per_tick){
+	if(tracker->_tick_timer >= tracker->_updates_per_tick){
 		if(tracker->_current_ticks % tracker->speed == 0){
 			for (ch = 0; ch < 4; ch++){
 				note = tracker->module.patterns[tracker->current_pattern].rows[tracker->current_row][ch];
@@ -89,15 +91,16 @@ void tracker_mod_tick(ModTracker* tracker){
 
 		//other per pick stuff like effects
 
-		tracker->_current_ticks = 0;
+		tracker->_current_ticks++;
+		tracker->_tick_timer = 0;
 	}
-	tracker->_current_ticks++;
+	tracker->_tick_timer++;
 }
 
 // 37 50 ac 01
 // 0011 0111 0101
 void tracker_mod_set_sample_rate(ModTracker* tracker, uint32_t sampleRate){
-	tracker->_updates_per_tick = ((sampleRate << 1) + (sampleRate >> 1)) / tracker->bpm;//sampleRate * 2.5 / tracker->bpm; 
+	tracker->_updates_per_tick = sampleRate * 2.5 / tracker->bpm; 
 	printf("Set updates per tick to %d\n", tracker->_updates_per_tick);
 }
 
@@ -111,13 +114,13 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 
 		for (ch = 0; ch < 4; ch++){
 			//mix channel
+			double freq = 8363 * pow((1152 - 808/ 192), 2);
 			chan = tracker->channels[ch]; 
-			chan.frequency = 8363 * pow(2, (0 - 48) / 12.0);
 			if(tracker->module.sample_data[chan.instrument] == NULL) continue;
-			samp_l += tracker->module.sample_data[chan.instrument][(uint8_t)chan.sample_offset] * chan.volume;
-			samp_r += tracker->module.sample_data[chan.instrument][(uint8_t)chan.sample_offset] * chan.volume;
+			samp_l += (tracker->module.sample_data[chan.instrument][(uint32_t)chan.sample_offset] - 128) * chan.volume;
+			samp_r += (tracker->module.sample_data[chan.instrument][(uint32_t)chan.sample_offset] - 128) * chan.volume;
 			
-			if(chan.sample_offset +=1 >= tracker->module.samples[chan.instrument].sample_length){
+			if(chan.sample_offset += (freq / 44100) >= tracker->module.samples[chan.instrument].sample_length){
 				chan.sample_offset = tracker->module.samples[chan.instrument].repeat_offset;
 			}
 		}
