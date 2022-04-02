@@ -12,3 +12,5 @@ CMakeFiles
 
 # executable
 tt
+tt.exe
+*.o
