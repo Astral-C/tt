@@ -11,10 +11,11 @@ void update_player(ma_device* device, void* output, const void* input, ma_uint32
 
 }
 
-int main(){
+int main(int argc, char* argv[]){
 	ModTracker tracker;
 
-	tracker_open_mod(&tracker, "spacedeb.mod");
+	if(argc < 2) return 1;
+	tracker_open_mod(&tracker, argv[1]);
 
 	ma_device_config config = ma_device_config_init(ma_device_type_playback);
 	config.playback.format = ma_format_s16;

@@ -111,10 +111,9 @@ void tracker_mod_tick(ModTracker* tracker){
 		if(tracker->_current_ticks % tracker->speed == 0){
 			for (ch = 0; ch < 4; ch++){
 				note = swap32(tracker->module.patterns[tracker->current_pattern].rows[tracker->current_row][ch]);
-				tracker->channels[ch].instrument = (note & 0x000FF000) >> 12; 
-				tracker->channels[ch].period = (note & 0xFFF00000) >> 20; 
+				tracker->channels[ch].instrument = (note & 0xF0000000) >> 24 | (note & 0x0000F000) >> 12; 
+				tracker->channels[ch].period = (note & 0x0FFF0000) >> 16; 
 				tracker->channels[ch].volume = tracker->module.samples[tracker->channels[ch].instrument].volume;
-				tracker->channels[ch].sample_offset = 0;
 			}
 			
 
@@ -158,15 +157,14 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 
 			chan = tracker->channels[ch];
 			if(chan.period == 0) continue;
-			if(chan.sample_offset >= tracker->module.samples[chan.instrument].sample_length) continue;
-			printf("Channel Period %d\n", chan.period);
+			printf("===Mixing===\nPeriod %d\nSample Len %d\nSample Offest %d\nInstrument %d\n", chan.period, tracker->module.samples[chan.instrument].sample_length, chan.sample_offset, chan.instrument);
 			double freq = ((8363.0 * 428.0) / chan.period) / 44100.0;
 			if(tracker->module.sample_data[chan.instrument] == NULL) continue;
 			
 			printf("Mixing Channel %d\n", ch);
 
-			samp_l += (tracker->module.sample_data[chan.instrument][chan.sample_offset]) * chan.volume * 128;
-			samp_r += (tracker->module.sample_data[chan.instrument][chan.sample_offset]) * chan.volume * 128;
+			samp_l += ((tracker->module.sample_data[chan.instrument][chan.sample_offset]) - 128 * chan.volume * 128);
+			samp_r += ((tracker->module.sample_data[chan.instrument][chan.sample_offset]) - 128 * chan.volume * 128);
 			
 			if(chan.sample_offset += freq >= tracker->module.samples[chan.instrument].sample_length){
 				chan.sample_offset = tracker->module.samples[chan.instrument].repeat_offset;

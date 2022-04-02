@@ -1,9 +1,17 @@
 #ifndef __MOD_H__
 #define __MOD_H__
 
+#ifdef __GNUC__
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
+#ifdef _MSC_VER
+#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
+#endif
+
 #include <stdint.h>
 
-typedef struct __attribute__((packed)) {
+PACK(typedef struct) {
     char name[22];
     uint16_t sample_length; //in u16s
     int8_t finetune; // First nybble should be blank, next is finetune
@@ -12,7 +20,7 @@ typedef struct __attribute__((packed)) {
     uint16_t repeat_length; //in u16s
 } MODSampleDef;
 
-typedef struct __attribute__((packed)) { //we don't want any padding, we are reading this directly from the file
+PACK(typedef struct) { //we don't want any padding, we are reading this directly from the file
     uint32_t rows[64][4]; //only supporting 4 channels for now
 } MODPattern;
 
