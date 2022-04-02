@@ -163,8 +163,8 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 			
 			printf("Mixing Channel %d\n", ch);
 
-			samp_l += ((tracker->module.sample_data[chan.instrument][chan.sample_offset]) - 128 * chan.volume * 128);
-			samp_r += ((tracker->module.sample_data[chan.instrument][chan.sample_offset]) - 128 * chan.volume * 128);
+			samp_l += tracker->module.sample_data[chan.instrument][chan.sample_offset] * chan.volume * 128;
+			samp_r += tracker->module.sample_data[chan.instrument][chan.sample_offset] * chan.volume * 128;
 			
 			if(chan.sample_offset += freq >= tracker->module.samples[chan.instrument].sample_length){
 				chan.sample_offset = tracker->module.samples[chan.instrument].repeat_offset;
