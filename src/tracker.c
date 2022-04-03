@@ -224,7 +224,7 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 			chan = &tracker->channels[ch];
 			if(chan->period == 0) continue;
 			double freq = (((8363.0 * 428.0) / chan->period) / 44100.0);
-			//printf("===Mixing===\nPeriod %d\nfrequency %f\nSample Len %d\nSample Offest %d\nInstrument %d\n", chan->period, freq, tracker->module.samples[chan->instrument].sample_length, chan->sample_offset, chan->instrument);
+			printf("===Mixing===\nPeriod %d\nfrequency %f\nSample Len %d\nSample Offest %d\nInstrument %d\n", chan->period, freq, tracker->module.samples[chan->instrument].sample_length, chan->sample_offset, chan->instrument);
 			if(tracker->module.sample_data[chan->instrument] == NULL) continue;
 			
 			int16_t sample = (int16_t)tracker->module.sample_data[chan->instrument][(uint32_t)chan->sample_offset];

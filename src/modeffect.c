@@ -42,6 +42,11 @@ void dummy_effect(ModTracker* tracker, Channel* chan)
     chan->effect = 0;
 }
 
+void arpeggio(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
 void porta_up(ModTracker* tracker, Channel* chan)
 {
     if(tracker->_current_ticks > 0 && chan->period > 133)
@@ -71,6 +76,32 @@ void tone_porta(ModTracker* tracker, Channel* chan)
     }
 }
 
+void vibrato(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void vol_slide_tone_porta(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void vol_slide_vibrato(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void tremolo(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+//FT2 extension
+void set_panning(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
 void sample_offset(ModTracker* tracker, Channel* chan)
 {
     chan->sample_offset = chan->effect_args * 0x100;
@@ -91,7 +122,93 @@ void vol_slide(ModTracker* tracker, Channel* chan)
     }
 }
 
+void pos_jump(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
 void set_volume(ModTracker* tracker, Channel* chan)
 {
     chan->volume = chan->effect_args & 64;
+}
+
+void pattern_break(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void fine_porta_up(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void fine_porta_down(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void set_vib_waveform(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void set_finetune(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void pattern_loop(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void set_tremolo_waveform(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+//FT2 extension
+void set_panning_rough(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void retrigger(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void fine_vol_slide_up(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void fine_vol_slide_down(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void note_cut(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void note_delay(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void pattern_delay(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void invert_loop(ModTracker* tracker, Channel* chan)
+{
+	//to do
+}
+
+void set_speed_tempo(ModTracker* tracker, Channel* chan)
+{
+	//to do
 }
