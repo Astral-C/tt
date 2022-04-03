@@ -1,6 +1,6 @@
 #include "modeffect.h"
 
-const void(*effect_list[0xFF])(ModTracker* tracker, Channel* chan) = 
+const void(*effect_list[0x10])(ModTracker* tracker, Channel* chan) = 
 {
 	arpeggio,//0xy 
 	porta_up,//1xx
@@ -17,7 +17,7 @@ const void(*effect_list[0xFF])(ModTracker* tracker, Channel* chan) =
 	set_volume,//Cxx
 	pattern_break,//Dxx
 	Exx_effect, //Exx
-	set_speed_tempo,//Fxx
+	set_speed_tempo//Fxx
 };
 
 void dummy_effect(ModTracker* tracker, Channel* chan)
@@ -93,6 +93,7 @@ void sample_offset(ModTracker* tracker, Channel* chan)
 
 	//only do this once
 	chan->effect = 0;
+	chan->effect_args = 0;
 }
 
 void vol_slide(ModTracker* tracker, Channel* chan)
@@ -294,11 +295,15 @@ void set_speed_tempo(ModTracker* tracker, Channel* chan)
 {
 	printf("set tempo/speed\n");
 	if(tracker->_current_ticks == 0){
-		if(chan->effect_args < 0x1F){
+		if(chan->effect_args <= 0x1F){
 			tracker->speed = chan->effect_args;
 		} else if(chan->effect_args > 0x1F && chan->effect_args < 0xFF){
 			tracker->bpm = chan->effect_args;
 			tracker->_updates_per_tick = tracker->_sample_rate * 2.5 / tracker->bpm; 
 		}
+
+		//only do this once
+		chan->effect = 0;
+		chan->effect_args = 0;
 	}
 }

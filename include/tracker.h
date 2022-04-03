@@ -11,8 +11,8 @@ typedef struct {
     uint32_t period;
     uint32_t porta_period;
     double sample_offset;
-    int8_t effect;
-    int8_t effect_args;
+    uint8_t effect;
+    uint8_t effect_args;
 } Channel;
 
 typedef struct {

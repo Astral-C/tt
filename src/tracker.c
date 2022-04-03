@@ -96,7 +96,7 @@ void tracker_mod_tick(ModTracker* tracker){
 		if(tracker->_current_ticks >= tracker->speed){
 			for (ch = 0; ch < 4; ch++){
 				note = swap32(tracker->module.patterns[tracker->module.song_positions[tracker->current_pattern]].rows[ch][tracker->current_row]);
-				instrument = (note & 0xF0000000) >> 24 | (note & 0x0000F000) >> 12;	
+				instrument = (note & 0xF0000000) >> 20 | (note & 0x0000F000) >> 12;	
 				period = (note & 0x0FFF0000) >> 16;
 				prev_instrument = tracker->channels[ch].instrument; 
 				
@@ -110,6 +110,17 @@ void tracker_mod_tick(ModTracker* tracker){
 				tracker->channels[ch].effect = (note & 0x00000F00) >> 8;
 				tracker->channels[ch].effect_args = (note & 0x000000FF);
 				tracker->channels[ch].volume = tracker->module.samples[tracker->channels[ch].instrument].volume;
+
+				/*if (tracker->channels[ch].effect != 0)
+				{
+					printf("calling effect %x with value %x\n", tracker->channels[ch].effect, tracker->channels[ch].effect_args);
+				}*/
+
+				if (tracker->channels[ch].effect > 0x0F)
+				{
+					printf("effect OOB!: %x\n", tracker->channels[ch].effect);
+				}
+
 				if(instrument != prev_instrument) tracker->channels[ch].sample_offset = 0;
 			}
 			
@@ -130,10 +141,7 @@ void tracker_mod_tick(ModTracker* tracker){
 			Channel* chan = &tracker->channels[ch];
 			
 			//Call effect from effect_list
-			if (chan->effect > 0x00)
-			{
-				(*effect_list[chan->effect - 1])(tracker, chan);
-			}
+			(*effect_list[chan->effect])(tracker, chan);
 		}
 
 		tracker->_current_ticks++;
