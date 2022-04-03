@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
@@ -8,16 +7,16 @@
 //MOD Period Table
 
 uint32_t swap32(uint32_t n) {
-    return (((n>>24)&0xFF) | ((n<<8) & 0xFF0000) | ((n>>8)&0xFF00) | ((n<<24)&0xFF000000));
+	return (((n>>24)&0xFF) | ((n<<8) & 0xFF0000) | ((n>>8)&0xFF00) | ((n<<24)&0xFF000000));
 }
 
 uint16_t swap16(uint16_t n) {
-    return (((n<<8)&0xFF00) | ((n>>8)&0x00FF));
+	return (((n<<8)&0xFF00) | ((n>>8)&0x00FF));
 }
 
 static int16_t period_table[60] = {
 /*  C-0,  C#0,  D-0,  D#0,  E-0,  F-0,  F#0,  G-0,  G#0,  A-0,  A#0,  B-0, */
-    1712, 1616, 1524, 1440, 1356, 1280, 1208, 1140, 1076, 1016,  960,  906,
+	1712, 1616, 1524, 1440, 1356, 1280, 1208, 1140, 1076, 1016,  960,  906,
 	
 /*	C-1,  C#1,  D-1,  D#1,  E-1,  F-1,  F#1,  G-1,  G#1,  A-1,  A#1,  B-1, */
 	856,  808,  762,  720,  678,  640,  604,  570,  538,  508,  480,  453,
@@ -37,6 +36,8 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 	FILE* mod_file;
 
 	if(tracker == NULL) return 1; //oops
+
+	memset(tracker, 0, sizeof(tracker));
 
 	tracker->bpm = 125; //defaults
 	tracker->speed = 6;
@@ -81,10 +82,10 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 
 	fclose(mod_file);
 
-	memset(tracker->channels, 0, sizeof(tracker->channels));
 #ifdef debug_write
 	tracker->dump = fopen("raw_pcm.pcm", "w");
 #endif
+
 }
 
 
@@ -110,6 +111,7 @@ void tracker_mod_tick(ModTracker* tracker){
 	uint32_t note;
 
 	if(tracker->_tick_timer >= tracker->_updates_per_tick){
+		printf("Ticking %d...\n", tracker->_current_ticks);
 		if(tracker->_current_ticks == tracker->speed){
 			for (ch = 0; ch < 4; ch++){
 				note = swap32(tracker->module.patterns[tracker->module.song_positions[tracker->current_pattern]].rows[tracker->current_row][ch]);
@@ -199,7 +201,7 @@ void tracker_mod_tick(ModTracker* tracker){
 
 
 void tracker_mod_set_sample_rate(ModTracker* tracker, uint32_t sampleRate){
-	tracker->_updates_per_tick = ((sampleRate << 2) + (sampleRate >> 2)) / tracker->bpm; 
+	tracker->_updates_per_tick = sampleRate * 2.5 / tracker->bpm; 
 	printf("Set updates per tick to %d\n", tracker->_updates_per_tick);
 }
 
@@ -209,6 +211,8 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 	Channel* chan;
 	int16_t mixed;
 	buff_ptr = 0;
+
+	printf("Buffer Size is %d\n", buf_size);
 
 	while(buff_ptr < buf_size){
 		samp_l = 0;
@@ -220,22 +224,23 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 #endif
 
 		for (ch = 0; ch < 4; ch++){
-
 			chan = &tracker->channels[ch];
 			if(chan->period == 0) continue;
 			double freq = (((8363.0 * 428.0) / chan->period) / 44100.0);
-			//printf("===Mixing===\nPeriod %d\nfrequency %f\nSample Len %d\nSample Offest %d\nInstrument %d\n", chan->period, freq, tracker->module.samples[chan->instrument].sample_length, chan->sample_offset, chan->instrument);
+			printf("===Mixing===\nPeriod %d\nfrequency %f\nSample Len %d\nSample Offest %d\nInstrument %d\n", chan->period, freq, tracker->module.samples[chan->instrument].sample_length, chan->sample_offset, chan->instrument);
 			if(tracker->module.sample_data[chan->instrument] == NULL) continue;
 			
+			printf("uhhhhuhuhuhuhuhuhu huhuhuhub\n");
 			int16_t sample = (int16_t)tracker->module.sample_data[chan->instrument][(uint32_t)chan->sample_offset];
 			samp_l += sample * chan->volume;
 			samp_r += sample * chan->volume;
+
+
 			chan->sample_offset += freq;
 			if(chan->sample_offset >= tracker->module.samples[chan->instrument].sample_length){
 				if (tracker->module.samples[chan->instrument].repeat_length > 1)
 				{
 					//if loop length is more than 1, the sample loops (0 supposedly is unsupported but there's no docs)
-					printf("looping sample...\n");
 					chan->sample_offset = tracker->module.samples[chan->instrument].repeat_offset + fmod(chan->sample_offset, tracker->module.samples[chan->instrument].repeat_length);
 				}
 				else

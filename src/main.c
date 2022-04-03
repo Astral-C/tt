@@ -1,44 +1,54 @@
 #include <stdio.h>
-#define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_audio.h>
 #include "tracker.h"
 
-void update_player(ma_device* device, void* output, const void* input, ma_uint32 frame_count){
-	ModTracker* tracker;
-	tracker = (ModTracker*)device->pUserData;
+static ModTracker* mod_tacker = NULL;
 
-	tracker_mod_update(tracker, output, frame_count);
+void audio_update(void* userdata, uint8_t* stream, int len){
+
+	len /= sizeof(int16_t);
+	tracker_mod_update(mod_tacker, (int16_t*)stream, (uint32_t)len);
 }
 
 int main(int argc, char* argv[]){
 	ModTracker tracker;
 
+	mod_tacker = &tracker;
+
+	SDL_Init(SDL_INIT_AUDIO);
+
 	if(argc < 2) return 1;
 	tracker_open_mod(&tracker, argv[1]);
 
-	ma_device_config config = ma_device_config_init(ma_device_type_playback);
-	config.playback.format = ma_format_s16;
-	config.playback.channels = 2;
-	config.sampleRate = 44100;
-	config.dataCallback = update_player;
-	config.pUserData = &tracker; //attach the tracker to the device as its userdata
+	SDL_AudioSpec target_format;
+	target_format.freq = 44100;
+	target_format.format = AUDIO_S16;
+	target_format.channels = 2;
+	target_format.samples = 4096;
+	target_format.callback = audio_update;
+	target_format.userdata = NULL;
 
-	tracker_mod_set_sample_rate(&tracker, config.sampleRate);
+	SDL_AudioSpec device_format;
+	SDL_AudioDeviceID dev = SDL_OpenAudioDevice(NULL, 0, &target_format, &device_format, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 
-	ma_device dev;
-	if(ma_device_init(NULL, &config, &dev) != MA_SUCCESS){
-		printf("Failed to open device\n");
-		return -1;
+	if (dev < 0)
+	{
+		printf("Error initiating audio device!\nError %s\n", SDL_GetError());
+		return 1;
 	}
 
-	ma_device_start(&dev);
+	tracker_mod_set_sample_rate(&tracker, 44100);
+
+	//Let the audio device play
+	SDL_PauseAudioDevice(dev, 0);
 
 	uint8_t quit = 0;
 	while(!quit){
 		quit = (getchar() == 'q');
 	}
 
-	ma_device_uninit(&dev);
+	SDL_CloseAudioDevice(dev);
 	tracker_close_mod(&tracker);
 
 	return 0;

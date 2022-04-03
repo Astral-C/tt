@@ -6,10 +6,10 @@ project(ttracker)
 
 include_directories(include)
 file(GLOB_RECURSE SOURCE
-    "src/*.c"
+	"src/*.c"
 )
 
 add_compile_definitions(debug_write)
 
 add_executable(tt ${SOURCE})
-target_link_libraries(tt m)
+target_link_libraries(tt m SDL2)
