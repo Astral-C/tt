@@ -141,55 +141,9 @@ void tracker_mod_tick(ModTracker* tracker){
 			Channel* chan = &tracker->channels[ch];
 			
 			//Call effect from effect_list
-			/*if (chan->effect > 0x00)
+			if (chan->effect > 0x00)
 			{
 				(*effect_list[chan->effect - 1])(tracker, chan);
-			}*/
-
-			switch (chan->effect)
-			{
-			case 0x01: //slide up
-				if(tracker->_current_ticks > 0 && chan->period > 133){
-					chan->period -= chan->effect_args;
-					if(chan->period < 133) chan->period = 133;
-				}
-				break;
-
-			case 0x02:
-				if(tracker->_current_ticks > 0 && chan->period < 856){
-					chan->period += chan->effect_args;
-					if(chan->period > 856) chan->period = 856;
-				}
-				break;
-
-			case 0x03:
-				break; //?
-
-			case 0x04:
-				//???????
-				break;
-
-			case 0x05:
-				break;
-
-			case 0x09:
-				chan->sample_offset = chan->effect_args * 0x100;
-				break;
-
-			case 0x0A:
-				if((chan->effect_args & 0xF0) >> 4 == 0){
-					chan->volume -= chan->effect_args & 0x0F;
-				} else if((chan->effect_args & 0x0F) == 0) {
-					chan->volume += (chan->effect_args & 0xF0) >> 4;
-				}
-				break;
-			
-			case 0x0C:
-				chan->volume = chan->effect_args & 64;
-				break;
-
-			default:
-				break;
 			}
 		}
 

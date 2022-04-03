@@ -21,7 +21,7 @@ PACK(typedef struct) {
 } MODSampleDef;
 
 PACK(typedef struct) { //we don't want any padding, we are reading this directly from the file
-	uint32_t rows[64][4]; //only supporting 4 channels for now
+	uint32_t rows[4][64]; //only supporting 4 channels for now
 } MODPattern;
 
 typedef struct {

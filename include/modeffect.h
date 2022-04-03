@@ -37,6 +37,6 @@ extern void pattern_delay(ModTracker* tracker, Channel* chan); //EEx
 extern void invert_loop(ModTracker* tracker, Channel* chan); //EFx
 extern void set_speed_tempo(ModTracker* tracker, Channel* chan); //Fxx
 
-static const void(*effect_list[0xFF])(ModTracker* tracker, Channel* chan);
+extern const void(*effect_list[0xFF])(ModTracker* tracker, Channel* chan);
 
 #endif //!__MODEFFECT__

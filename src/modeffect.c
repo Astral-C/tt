@@ -1,6 +1,6 @@
 #include "modeffect.h"
 
-static const void(*effect_list[0xFF])(ModTracker* tracker, Channel* chan) = 
+const void(*effect_list[0xFF])(ModTracker* tracker, Channel* chan) = 
 {
 	arpeggio,//0xy 
 	porta_up,//1xx
