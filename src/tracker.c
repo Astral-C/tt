@@ -89,20 +89,28 @@ void tracker_close_mod(ModTracker* tracker){
 void tracker_mod_tick(ModTracker* tracker){
 	int ch;
 	uint8_t prev_instrument;
-	uint32_t note;
+	uint8_t instrument;
+	uint32_t note, period;
 
 	if(tracker->_tick_timer >= tracker->_updates_per_tick){
-		printf("Ticking %d...\n", tracker->_current_ticks);
 		if(tracker->_current_ticks == tracker->speed){
 			for (ch = 0; ch < 4; ch++){
 				note = swap32(tracker->module.patterns[tracker->module.song_positions[tracker->current_pattern]].rows[ch][tracker->current_row]);
-				tracker->channels[ch].instrument = (note & 0xF0000000) >> 24 | (note & 0x0000F000) >> 12; 
-				tracker->channels[ch].period = (note & 0x0FFF0000) >> 16; 
-				tracker->channels[ch].porta_period = (note & 0x0FFF0000) >> 16; 
+				instrument = (note & 0xF0000000) >> 24 | (note & 0x0000F000) >> 12;
+				period = (note & 0x0FFF0000) >> 16;
+				prev_instrument = tracker->channels[ch].instrument; 
+				
+				if(instrument > 0){
+					tracker->channels[ch].instrument = instrument - 1;
+				}
+				if(period != 0){
+					tracker->channels[ch].period = period; 
+					tracker->channels[ch].porta_period = period;
+				}
 				tracker->channels[ch].effect = (note & 0x00000F00) >> 8;
 				tracker->channels[ch].effect_args = (note & 0x000000FF);
 				tracker->channels[ch].volume = tracker->module.samples[tracker->channels[ch].instrument].volume;
-				tracker->channels[ch].sample_offset = 0;
+				if(instrument != prev_instrument) tracker->channels[ch].sample_offset = 0;
 			}
 			
 
@@ -137,6 +145,7 @@ void tracker_mod_tick(ModTracker* tracker){
 
 void tracker_mod_set_sample_rate(ModTracker* tracker, uint32_t sampleRate){
 	tracker->_updates_per_tick = sampleRate * 2.5 / tracker->bpm; 
+	tracker->_sample_rate = sampleRate;
 	printf("Set updates per tick to %d\n", tracker->_updates_per_tick);
 }
 
@@ -146,8 +155,6 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 	Channel* chan;
 	int16_t mixed;
 	buff_ptr = 0;
-
-	printf("Buffer Size is %d\n", buf_size);
 
 	while(buff_ptr < buf_size){
 		samp_l = 0;
@@ -159,11 +166,9 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 #endif
 
 		for (ch = 0; ch < 4; ch++){
-			printf("begin mix %u\n", ch);
 			chan = &tracker->channels[ch];
 			if(chan->period == 0) continue;
-			double freq = (((8363.0 * 428.0) / chan->period) / 44100.0);
-			printf("===Mixing channel %u===\nPeriod %d\nfrequency %f\nSample Len %d\nSample Offest %d\nInstrument %d\n", ch, chan->period, freq, tracker->module.samples[chan->instrument].sample_length, chan->sample_offset, chan->instrument);
+			double freq = (((8363.0 * 428.0) / chan->period) / tracker->_sample_rate);
 			if(tracker->module.sample_data[chan->instrument] == NULL) continue;
 			
 			int16_t sample = (int16_t)tracker->module.sample_data[chan->instrument][(uint32_t)chan->sample_offset];

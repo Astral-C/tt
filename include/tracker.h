@@ -19,6 +19,7 @@ typedef struct {
     uint32_t _tick_timer;
     uint32_t _current_ticks;
     uint32_t _updates_per_tick;
+    uint32_t _sample_rate;
 
     uint16_t bpm;
     uint16_t speed;
