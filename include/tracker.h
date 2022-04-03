@@ -8,7 +8,9 @@ typedef struct {
     uint8_t instrument;
     int8_t volume;
     uint32_t period;
-    uint32_t sample_offset;
+    double sample_offset;
+    int8_t effect;
+    int8_t effect_args;
 } Channel;
 
 typedef struct {
