@@ -42,7 +42,7 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 	tracker->bpm = 125; //defaults
 	tracker->speed = 6;
 
-	mod_file = fopen(mod, "r");
+	mod_file = fopen(mod, "rb");
 	fread(&tracker->module.module_name, sizeof(tracker->module.module_name), 1, mod_file);
 	fread(&tracker->module.samples[0], sizeof(tracker->module.samples), 1, mod_file);
 	for (i = 0; i < 32; i++){
@@ -224,16 +224,16 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 #endif
 
 		for (ch = 0; ch < 4; ch++){
+			printf("begin mix %u\n", ch);
 			chan = &tracker->channels[ch];
 			if(chan->period == 0) continue;
 			double freq = (((8363.0 * 428.0) / chan->period) / 44100.0);
-			printf("===Mixing===\nPeriod %d\nfrequency %f\nSample Len %d\nSample Offest %d\nInstrument %d\n", chan->period, freq, tracker->module.samples[chan->instrument].sample_length, chan->sample_offset, chan->instrument);
+			printf("===Mixing channel %u===\nPeriod %d\nfrequency %f\nSample Len %d\nSample Offest %d\nInstrument %d\n", ch, chan->period, freq, tracker->module.samples[chan->instrument].sample_length, chan->sample_offset, chan->instrument);
 			if(tracker->module.sample_data[chan->instrument] == NULL) continue;
 			
 			int16_t sample = (int16_t)tracker->module.sample_data[chan->instrument][(uint32_t)chan->sample_offset];
 			samp_l += sample * chan->volume;
 			samp_r += sample * chan->volume;
-
 
 			chan->sample_offset += freq;
 			if(chan->sample_offset >= tracker->module.samples[chan->instrument].sample_length){

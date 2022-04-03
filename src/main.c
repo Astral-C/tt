@@ -3,22 +3,22 @@
 #include <SDL2/SDL_audio.h>
 #include "tracker.h"
 
-static ModTracker* mod_tacker = NULL;
+static ModTracker* mod_tracker = NULL;
 
 void audio_update(void* userdata, uint8_t* stream, int len){
 
 	len /= sizeof(int16_t);
-	tracker_mod_update(mod_tacker, (int16_t*)stream, (uint32_t)len);
+	tracker_mod_update(mod_tracker, (int16_t*)stream, (uint32_t)len);
 }
 
 int main(int argc, char* argv[]){
 
-	mod_tacker = (ModTracker*)malloc(sizeof(ModTracker));
+	mod_tracker = (ModTracker*)malloc(sizeof(ModTracker));
 
 	SDL_Init(SDL_INIT_AUDIO);
 
 	if(argc < 2) return 1;
-	tracker_open_mod(mod_tacker, argv[1]);
+	tracker_open_mod(mod_tracker, argv[1]);
 
 	SDL_AudioSpec target_format;
 	target_format.freq = 44100;
@@ -37,7 +37,7 @@ int main(int argc, char* argv[]){
 		return 1;
 	}
 
-	tracker_mod_set_sample_rate(mod_tacker, 44100);
+	tracker_mod_set_sample_rate(mod_tracker, 44100);
 
 	//Let the audio device play
 	SDL_PauseAudioDevice(dev, 0);
@@ -48,9 +48,9 @@ int main(int argc, char* argv[]){
 	}
 
 	SDL_CloseAudioDevice(dev);
-	tracker_close_mod(mod_tacker);
+	tracker_close_mod(mod_tracker);
 
-	free(mod_tacker);
+	free(mod_tracker);
 
 	return 0;
 }
