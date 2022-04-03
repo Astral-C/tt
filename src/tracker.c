@@ -66,7 +66,6 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 	
 	fread(&tracker->module.patterns[0], sizeof(MODPattern), tracker->module.pattern_count, mod_file);
 
-	//fseek(mod_file, 0x403E, 0);
 	//read sample data
 	for(i = 0; i < 32; i++){
 		MODSampleDef* def = &tracker->module.samples[i];
@@ -76,7 +75,6 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 		def->finetune <<= 4;
 
 		tracker->module.sample_data[i] = malloc(def->sample_length);
-		//printf("Reading Sample from %x to %x\n", ftell(mod_file), ftell(mod_file) + def->sample_length);
 		fread(tracker->module.sample_data[i], 1, def->sample_length, mod_file);
 	}
 
@@ -119,6 +117,7 @@ void tracker_mod_tick(ModTracker* tracker){
 				tracker->channels[ch].effect = (note & 0x00000F00) >> 8;
 				tracker->channels[ch].effect_args = (note & 0x000000FF);
 				tracker->channels[ch].volume = tracker->module.samples[tracker->channels[ch].instrument].volume;
+				tracker->channels[ch].sample_offset = 0;
 			}
 			
 
@@ -126,7 +125,7 @@ void tracker_mod_tick(ModTracker* tracker){
 			if(tracker->current_row == 64){
 				tracker->current_row = 0;
 				tracker->current_pattern++;
-				if(tracker->current_pattern > 128){
+				if(tracker->current_pattern > tracker->module.song_length){
 					tracker->current_pattern = 0;
 				}
 			}
@@ -134,27 +133,54 @@ void tracker_mod_tick(ModTracker* tracker){
 		}
 
 		//other per pick stuff like effects
-		/*for (ch = 0; ch < 4; ch++){
-			Channel chan = tracker->channels[ch];
-			switch (chan.effect)
+		for (ch = 0; ch < 4; ch++){
+			Channel* chan = &tracker->channels[ch];
+			switch (chan->effect)
 			{
 			case 0x01: //slide up
-				if(tracker->_current_ticks > 0){
-					chan-= chan.effect_args;
+				if(tracker->_current_ticks > 0 && chan->period > 133){
+					chan->period -= chan->effect_args;
+					if(chan->period < 133) chan->period = 133;
 				}
-				
 				break;
+
 			case 0x02:
-				if(tracker->_current_ticks > 0){
-					for (ch = 0; ch < 4; ch++){
-						tracker->channels[ch].period += args;
-					}
+				if(tracker->_current_ticks > 0 && chan->period < 856){
+					chan->period += chan->effect_args;
+					if(chan->period > 856) chan->period = 856;
 				}
+				break;
+
+			case 0x03:
+				break; //?
+
+			case 0x04:
+				//???????
+				break;
+
+			case 0x05:
+				break;
+
+			case 0x09:
+				chan->sample_offset = chan->effect_args * 0x100;
+				break;
+
+			case 0x0A:
+				if((chan->effect_args & 0xF0) >> 4 == 0){
+					chan->volume -= chan->effect_args & 0x0F;
+				} else if((chan->effect_args & 0x0F) == 0) {
+					chan->volume += (chan->effect_args & 0xF0) >> 4;
+				}
+				break;
+			
+			case 0x0C:
+				chan->volume = chan->effect_args & 64;
+				break;
 
 			default:
 				break;
 			}
-		}*/
+		}
 
 		tracker->_current_ticks++;
 		tracker->_tick_timer = 0;
@@ -164,7 +190,7 @@ void tracker_mod_tick(ModTracker* tracker){
 
 
 void tracker_mod_set_sample_rate(ModTracker* tracker, uint32_t sampleRate){
-	tracker->_updates_per_tick = sampleRate * 2.5 / tracker->bpm; 
+	tracker->_updates_per_tick = ((sampleRate << 2) + (sampleRate >> 2)) / tracker->bpm; 
 	printf("Set updates per tick to %d\n", tracker->_updates_per_tick);
 }
 
@@ -172,7 +198,7 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 	int samples_per_tick, buff_ptr;
 	int16_t ch, samp_l, samp_r;
 	Channel* chan;
-	int8_t mixed;
+	int16_t mixed;
 	buff_ptr = 0;
 
 	while(buff_ptr < buf_size){
@@ -189,26 +215,25 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 			chan = &tracker->channels[ch];
 			if(chan->period == 0) continue;
 			double freq = (((8363.0 * 428.0) / chan->period) / 44100.0);
-			printf("===Mixing===\nPeriod %d\nfrequency %f\nSample Len %d\nSample Offest %d\nInstrument %d\n", chan->period, freq, tracker->module.samples[chan->instrument].sample_length, chan->sample_offset, chan->instrument);
+			//printf("===Mixing===\nPeriod %d\nfrequency %f\nSample Len %d\nSample Offest %d\nInstrument %d\n", chan->period, freq, tracker->module.samples[chan->instrument].sample_length, chan->sample_offset, chan->instrument);
 			if(tracker->module.sample_data[chan->instrument] == NULL) continue;
 			
-			int8_t sample = tracker->module.sample_data[chan->instrument][(uint32_t)chan->sample_offset];
-			samp_l += sample * chan->volume * 128;
-			samp_r += sample * chan->volume * 128;
-#ifdef debug_write			
-			mixed += sample * chan->volume;
-#endif
+			int16_t sample = (int16_t)tracker->module.sample_data[chan->instrument][(uint32_t)chan->sample_offset];
+			samp_l += sample * chan->volume;
+			samp_r += sample * chan->volume;
 			chan->sample_offset += freq;
 			if(chan->sample_offset >= tracker->module.samples[chan->instrument].sample_length){
-				chan->sample_offset = tracker->module.samples[chan->instrument].repeat_offset;
+				printf("looping sample...\n");
+				chan->sample_offset = tracker->module.samples[chan->instrument].repeat_offset + fmod(chan->sample_offset, tracker->module.samples[chan->instrument].repeat_length);
 			}
 		}
 		
 #ifdef debug_write
-		fwrite(&mixed, 1, 1, tracker->dump);
+		fwrite(&samp_r, 2, 1, tracker->dump);
+		fwrite(&samp_l, 2, 1, tracker->dump);
 #endif		
 		buffer[buff_ptr] = samp_r;
 		buffer[buff_ptr+1] = samp_l;
-		buff_ptr += 2;
+		buff_ptr+=2;
 	} 
 }
