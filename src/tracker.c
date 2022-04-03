@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include "tracker.h"
+#include "modeffect.h"
 
 //MOD Period Table
 
@@ -114,6 +115,7 @@ void tracker_mod_tick(ModTracker* tracker){
 				note = swap32(tracker->module.patterns[tracker->module.song_positions[tracker->current_pattern]].rows[tracker->current_row][ch]);
 				tracker->channels[ch].instrument = (note & 0xF0000000) >> 24 | (note & 0x0000F000) >> 12; 
 				tracker->channels[ch].period = (note & 0x0FFF0000) >> 16; 
+				tracker->channels[ch].porta_period = (note & 0x0FFF0000) >> 16; 
 				tracker->channels[ch].effect = (note & 0x00000F00) >> 8;
 				tracker->channels[ch].effect_args = (note & 0x000000FF);
 				tracker->channels[ch].volume = tracker->module.samples[tracker->channels[ch].instrument].volume;
@@ -135,6 +137,13 @@ void tracker_mod_tick(ModTracker* tracker){
 		//other per pick stuff like effects
 		for (ch = 0; ch < 4; ch++){
 			Channel* chan = &tracker->channels[ch];
+			
+			//Call effect from effect_list
+			/*if (chan->effect > 0x00)
+			{
+				(*effect_list[chan->effect - 1])(tracker, chan);
+			}*/
+
 			switch (chan->effect)
 			{
 			case 0x01: //slide up
