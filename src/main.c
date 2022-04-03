@@ -8,7 +8,6 @@ void update_player(ma_device* device, void* output, const void* input, ma_uint32
 	tracker = (ModTracker*)device->pUserData;
 
 	tracker_mod_update(tracker, output, frame_count);
-
 }
 
 int main(int argc, char* argv[]){

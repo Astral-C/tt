@@ -10,6 +10,10 @@ CMakeFiles
 # module files
 *.mod
 
+# sample dumps
+Sample_*
+*.pcm
+
 # executable
 tt
 tt.exe

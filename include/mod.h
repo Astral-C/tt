@@ -15,7 +15,7 @@ PACK(typedef struct) {
     char name[22];
     uint16_t sample_length; //in u16s
     int8_t finetune; // First nybble should be blank, next is finetune
-    uint8_t volume; //max is 64, 0x00 - 0x40
+    int8_t volume; //max is 64, 0x00 - 0x40
     uint16_t repeat_offset; //in u16s
     uint16_t repeat_length; //in u16s
 } MODSampleDef;

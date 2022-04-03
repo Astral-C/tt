@@ -6,8 +6,7 @@
 
 typedef struct {
     uint8_t instrument;
-    uint8_t base_note;
-    uint8_t volume;
+    int8_t volume;
     uint32_t period;
     uint32_t sample_offset;
 } Channel;
@@ -23,6 +22,9 @@ typedef struct {
     uint16_t current_pattern;
     Channel channels[8]; //playback channels
     MODFile module;
+#ifdef debug_write
+    FILE* dump;
+#endif
 } ModTracker;
 
 // initialize a tracker for a .mod file with the given path

@@ -42,7 +42,7 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 
 	mod_file = fopen(mod, "r");
 	fread(&tracker->module.module_name, sizeof(tracker->module.module_name), 1, mod_file);
-	fread(&tracker->module.samples, sizeof(tracker->module.samples), 1, mod_file);
+	fread(&tracker->module.samples[0], sizeof(tracker->module.samples), 1, mod_file);
 	for (i = 0; i < 32; i++){
 		tracker->module.samples[i].sample_length = swap16(tracker->module.samples[i].sample_length);
 		tracker->module.samples[i].repeat_length = swap16(tracker->module.samples[i].repeat_length);
@@ -52,7 +52,7 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 
 	fread(&tracker->module.song_length, sizeof(tracker->module.song_length), 1, mod_file); //length in patterns
 	fread(&tracker->module.old_tracker_force, sizeof(tracker->module.old_tracker_force), 1, mod_file);
-	fread(&tracker->module.song_positions, sizeof(tracker->module.song_positions), 1, mod_file);
+	fread(&tracker->module.song_positions, 128, 1, mod_file);
 	fread(&tracker->module.signature, sizeof(tracker->module.signature), 1, mod_file);
 	
 
@@ -66,8 +66,7 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 	
 	fread(&tracker->module.patterns[0], sizeof(MODPattern), tracker->module.pattern_count, mod_file);
 
-	printf("Reading Samples at %x\n", ftell(mod_file));
-
+	//fseek(mod_file, 0x403E, 0);
 	//read sample data
 	for(i = 0; i < 32; i++){
 		MODSampleDef* def = &tracker->module.samples[i];
@@ -75,16 +74,18 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 		def->repeat_offset *= 2;
 		def->repeat_length *= 2;
 		def->finetune <<= 4;
-		//only read if the sample len is > 0
-		if(def->sample_length == 0) continue;
 
 		tracker->module.sample_data[i] = malloc(def->sample_length);
+		//printf("Reading Sample from %x to %x\n", ftell(mod_file), ftell(mod_file) + def->sample_length);
 		fread(tracker->module.sample_data[i], 1, def->sample_length, mod_file);
 	}
 
 	fclose(mod_file);
 
 	memset(tracker->channels, 0, sizeof(tracker->channels));
+#ifdef debug_write
+	tracker->dump = fopen("raw_pcm.pcm", "w");
+#endif
 }
 
 
@@ -99,7 +100,9 @@ void tracker_close_mod(ModTracker* tracker){
 			free(tracker->module.sample_data[i]);
 		}
 	}
-	
+#ifdef debug_write
+	fclose(tracker->dump);
+#endif
 }
 
 void tracker_mod_tick(ModTracker* tracker){
@@ -145,6 +148,7 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 	int samples_per_tick, buff_ptr;
 	int16_t ch, samp_l, samp_r;
 	Channel chan;
+	int8_t mixed;
 	buff_ptr = 0;
 
 	while(buff_ptr < buf_size){
@@ -152,26 +156,32 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 		samp_r = 0;
 		tracker_mod_tick(tracker);
 
+#ifdef debug_write
+		mixed = 0;
+#endif
+
 		for (ch = 0; ch < 4; ch++){
-			//mix channel
 
 			chan = tracker->channels[ch];
 			if(chan.period == 0) continue;
-			printf("===Mixing===\nPeriod %d\nSample Len %d\nSample Offest %d\nInstrument %d\n", chan.period, tracker->module.samples[chan.instrument].sample_length, chan.sample_offset, chan.instrument);
-			double freq = ((8363.0 * 428.0) / chan.period) / 44100.0;
+			double freq = (((8363.0 * 428.0) / chan.period) / 44100.0) * 100;
+			printf("===Mixing===\nPeriod %d\nfrequency %f\nSample Len %d\nSample Offest %d\nInstrument %d\n", chan.period, freq, tracker->module.samples[chan.instrument].sample_length, chan.sample_offset, chan.instrument);
 			if(tracker->module.sample_data[chan.instrument] == NULL) continue;
 			
-			printf("Mixing Channel %d\n", ch);
-
-			samp_l += tracker->module.sample_data[chan.instrument][chan.sample_offset] * chan.volume * 128;
-			samp_r += tracker->module.sample_data[chan.instrument][chan.sample_offset] * chan.volume * 128;
-			
+			int8_t sample = tracker->module.sample_data[chan.instrument][chan.sample_offset];
+			samp_l += sample * chan.volume * 128;
+			samp_r += sample * chan.volume * 128;
+#ifdef debug_write			
+			mixed += sample * chan.volume;
+#endif
 			if(chan.sample_offset += freq >= tracker->module.samples[chan.instrument].sample_length){
-				chan.sample_offset = tracker->module.samples[chan.instrument].repeat_offset;
+				chan.sample_offset = tracker->module.samples[chan.instrument].repeat_offset + (chan.sample_offset % tracker->module.samples[chan.instrument].repeat_length);
 			}
-			printf("Finished Mixing Channel %d\n", ch);
 		}
 		
+#ifdef debug_write
+		fwrite(&mixed, 1, 1, tracker->dump);
+#endif		
 		buffer[buff_ptr] = samp_r;
 		buffer[buff_ptr+1] = samp_l;
 		buff_ptr += 2;
