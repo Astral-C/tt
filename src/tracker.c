@@ -167,7 +167,7 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 
 		for (ch = 0; ch < 4; ch++){
 			chan = &tracker->channels[ch];
-			if(chan->period == 0) continue;
+			if(chan->period == 0 || chan->volume == 0) continue;
 			double freq = (((8363.0 * 428.0) / chan->period) / tracker->_sample_rate);
 			if(tracker->module.sample_data[chan->instrument] == NULL) continue;
 			

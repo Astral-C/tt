@@ -292,5 +292,13 @@ void invert_loop(ModTracker* tracker, Channel* chan)
 
 void set_speed_tempo(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	printf("set tempo/speed\n");
+	if(tracker->_current_ticks == 0){
+		if(chan->effect_args < 0x1F){
+			tracker->speed = chan->effect_args;
+		} else if(chan->effect_args > 0x1F && chan->effect_args < 0xFF){
+			tracker->bpm = chan->effect_args;
+			tracker->_updates_per_tick = tracker->_sample_rate * 2.5 / tracker->bpm; 
+		}
+	}
 }
