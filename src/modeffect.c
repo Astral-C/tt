@@ -16,22 +16,7 @@ const void(*effect_list[0xFF])(ModTracker* tracker, Channel* chan) =
 	pos_jump,//Bxx
 	set_volume,//Cxx
 	pattern_break,//Dxx
-	dummy_effect, //SetFilter,//E0x - original Amiga effect; may not be needed?
-	fine_porta_up,//E1x
-	fine_porta_down,//E2x
-	dummy_effect, //GlissandoConyrol,//E3x - effect is poorly documented and usually not supported
-	set_vib_waveform,//E4x
-	set_finetune,//E5x
-	pattern_loop,//E6x - 0 sets loop start, x jumps to the start point x times
-	set_tremolo_waveform,//E7x
-	set_panning_rough,//E8x - Another FT2 extension
-	retrigger,//E9x
-	fine_vol_slide_up,//EAx
-	fine_vol_slide_down,//EBx
-	note_cut,//ECx
-	note_delay,//EDx
-	pattern_delay,//EEx
-	invert_loop,//EFx
+	Exx_effect, //Exx
 	set_speed_tempo,//Fxx
 };
 
@@ -135,6 +120,103 @@ void set_volume(ModTracker* tracker, Channel* chan)
 void pattern_break(ModTracker* tracker, Channel* chan)
 {
 	//to do
+}
+
+void Exx_effect(ModTracker* tracker, Channel* chan)
+{
+	uint8_t effect_index = (chan->effect_args & 0xF0) >> 4;
+
+	switch (effect_index)
+	{
+		case 0x01:
+		{
+			//E1x
+			fine_porta_up(tracker, chan);
+			break;
+		}
+		case 0x02:
+		{
+			//E1x
+			fine_porta_down(tracker, chan);
+			break;
+		}
+		case 0x04:
+		{
+			//E4x
+			set_vib_waveform(tracker, chan);
+			break;
+		}
+		case 0x05:
+		{
+			//E5x
+			set_finetune(tracker, chan);
+			break;
+		}
+		case 0x06:
+		{
+			//E6x
+			pattern_loop(tracker, chan);
+			break;
+		}
+		case 0x07:
+		{
+			//E7x
+			set_tremolo_waveform(tracker, chan);
+			break;
+		}
+		case 0x08:
+		{
+			//E8x
+			set_panning_rough(tracker, chan);
+			break;
+		}
+		case 0x09:
+		{
+			//E9x
+			retrigger(tracker, chan);
+			break;
+		}
+		case 0x0A:
+		{
+			//EAx
+			fine_vol_slide_up(tracker, chan);
+			break;
+		}
+		case 0x0B:
+		{
+			//EBx
+			fine_vol_slide_down(tracker, chan);
+			break;
+		}
+		case 0x0C:
+		{
+			//ECx
+			note_cut(tracker, chan);
+			break;
+		}
+		case 0x0D:
+		{
+			//EDx
+			note_delay(tracker, chan);
+			break;
+		}
+		case 0x0E:
+		{
+			//EEx
+			pattern_delay(tracker, chan);
+			break;
+		}
+		case 0x0F:
+		{
+			//EFx
+			invert_loop(tracker, chan);
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
 }
 
 void fine_porta_up(ModTracker* tracker, Channel* chan)

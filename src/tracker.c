@@ -93,17 +93,17 @@ void tracker_mod_tick(ModTracker* tracker){
 	uint32_t note, period;
 
 	if(tracker->_tick_timer >= tracker->_updates_per_tick){
-		if(tracker->_current_ticks == tracker->speed){
+		if(tracker->_current_ticks >= tracker->speed){
 			for (ch = 0; ch < 4; ch++){
 				note = swap32(tracker->module.patterns[tracker->module.song_positions[tracker->current_pattern]].rows[ch][tracker->current_row]);
-				instrument = (note & 0xF0000000) >> 24 | (note & 0x0000F000) >> 12;
+				instrument = (note & 0xF0000000) >> 24 | (note & 0x0000F000) >> 12;	
 				period = (note & 0x0FFF0000) >> 16;
 				prev_instrument = tracker->channels[ch].instrument; 
 				
-				if(instrument > 0){
+				if(instrument > 0 && instrument < 32){
 					tracker->channels[ch].instrument = instrument - 1;
 				}
-				if(period != 0){
+				if(period > 0){
 					tracker->channels[ch].period = period; 
 					tracker->channels[ch].porta_period = period;
 				}

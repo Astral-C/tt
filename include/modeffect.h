@@ -19,6 +19,7 @@ extern void vol_slide(ModTracker* tracker, Channel* chan); //Axy
 extern void pos_jump(ModTracker* tracker, Channel* chan); //Bxx
 extern void set_volume(ModTracker* tracker, Channel* chan); //Cxx
 extern void pattern_break(ModTracker* tracker, Channel* chan); //Dxx
+extern void Exx_effect(ModTracker* tracker, Channel* chan);
 //extern void SetFilter(ModTracker* tracker, Channel* chan); //E0x - original Amiga effect; may not be needed?
 extern void fine_porta_up(ModTracker* tracker, Channel* chan); //E1x
 extern void fine_porta_down(ModTracker* tracker, Channel* chan); //E2x
