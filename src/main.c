@@ -12,14 +12,13 @@ void audio_update(void* userdata, uint8_t* stream, int len){
 }
 
 int main(int argc, char* argv[]){
-	ModTracker tracker;
 
-	mod_tacker = &tracker;
+	mod_tacker = (ModTracker*)malloc(sizeof(ModTracker));
 
 	SDL_Init(SDL_INIT_AUDIO);
 
 	if(argc < 2) return 1;
-	tracker_open_mod(&tracker, argv[1]);
+	tracker_open_mod(mod_tacker, argv[1]);
 
 	SDL_AudioSpec target_format;
 	target_format.freq = 44100;
@@ -38,7 +37,7 @@ int main(int argc, char* argv[]){
 		return 1;
 	}
 
-	tracker_mod_set_sample_rate(&tracker, 44100);
+	tracker_mod_set_sample_rate(mod_tacker, 44100);
 
 	//Let the audio device play
 	SDL_PauseAudioDevice(dev, 0);
@@ -49,7 +48,9 @@ int main(int argc, char* argv[]){
 	}
 
 	SDL_CloseAudioDevice(dev);
-	tracker_close_mod(&tracker);
+	tracker_close_mod(mod_tacker);
+
+	free(mod_tacker);
 
 	return 0;
 }
