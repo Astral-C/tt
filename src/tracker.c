@@ -4,8 +4,6 @@
 #include "tracker.h"
 #include "modeffect.h"
 
-//MOD Period Table
-
 uint32_t swap32(uint32_t n) {
 	return (((n>>24)&0xFF) | ((n<<8) & 0xFF0000) | ((n>>8)&0xFF00) | ((n<<24)&0xFF000000));
 }
@@ -13,23 +11,6 @@ uint32_t swap32(uint32_t n) {
 uint16_t swap16(uint16_t n) {
 	return (((n<<8)&0xFF00) | ((n>>8)&0x00FF));
 }
-
-static int16_t period_table[60] = {
-/*  C-0,  C#0,  D-0,  D#0,  E-0,  F-0,  F#0,  G-0,  G#0,  A-0,  A#0,  B-0, */
-	1712, 1616, 1524, 1440, 1356, 1280, 1208, 1140, 1076, 1016,  960,  906,
-	
-/*	C-1,  C#1,  D-1,  D#1,  E-1,  F-1,  F#1,  G-1,  G#1,  A-1,  A#1,  B-1, */
-	856,  808,  762,  720,  678,  640,  604,  570,  538,  508,  480,  453,
-	
-/*	C-2,  C#2,  D-2,  D#2,  E-2,  F-2,  F#2,  G-2,  G#2,  A-2,  A#2,  B-2, */
-	428,  404,  381,  360,  339,  320,  302,  285,  269,  254,  240,  226,
-
-/*	C-3,  C#3,  D-3,  D#3,  E-3,  F-3,  F#3,  G-3,  G#3,  A-3,  A#3,  B-3, */
-	214,  202,  190,  180,  170,  160,  151,  143,  135,  127,  120,  113,
-
-/*	C-4,  C#4,  D-4,  D#4,  E-4,  F-4,  F#4,  G-4,  G#4,  A-4,  A#4,  B-4, */
-	107,  101,   95,   90,   85,   80,   75,   71,   67,   63,   60,   56,
-};
 
 uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 	int i;
@@ -114,7 +95,7 @@ void tracker_mod_tick(ModTracker* tracker){
 		printf("Ticking %d...\n", tracker->_current_ticks);
 		if(tracker->_current_ticks == tracker->speed){
 			for (ch = 0; ch < 4; ch++){
-				note = swap32(tracker->module.patterns[tracker->module.song_positions[tracker->current_pattern]].rows[tracker->current_row][ch]);
+				note = swap32(tracker->module.patterns[tracker->module.song_positions[tracker->current_pattern]].rows[ch][tracker->current_row]);
 				tracker->channels[ch].instrument = (note & 0xF0000000) >> 24 | (note & 0x0000F000) >> 12; 
 				tracker->channels[ch].period = (note & 0x0FFF0000) >> 16; 
 				tracker->channels[ch].porta_period = (note & 0x0FFF0000) >> 16; 
