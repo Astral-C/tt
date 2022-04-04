@@ -105,11 +105,14 @@ void tracker_mod_tick(ModTracker* tracker){
 				effect = (note & 0x00000F00) >> 8;
 				tracker->channels[ch].effect = effect;
 				tracker->channels[ch].effect_args = (note & 0x000000FF);
-				tracker->channels[ch].volume = tracker->module.samples[tracker->channels[ch].instrument].volume;
 
 				if(instrument > 0 && instrument < 32){
 					tracker->channels[ch].instrument = instrument - 1;
 					tracker->channels[ch].pan = 0x80; //reset pan to middle
+					tracker->channels[ch].volume = tracker->module.samples[tracker->channels[ch].instrument].volume;
+
+					if(instrument != prev_instrument)
+						tracker->channels[ch].sample_offset = 0;
 				}
 
 				if(period > 0){
@@ -120,17 +123,10 @@ void tracker_mod_tick(ModTracker* tracker){
 					tracker->channels[ch].porta_period = period;
 				}
 
-				/*if (tracker->channels[ch].effect != 0)
-				{
-					printf("calling effect %x with value %x\n", tracker->channels[ch].effect, tracker->channels[ch].effect_args);
-				}*/
-
 				if (tracker->channels[ch].effect > 0x0F)
 				{
 					printf("effect OOB!: %x\n", tracker->channels[ch].effect);
 				}
-
-				if(instrument != prev_instrument) tracker->channels[ch].sample_offset = 0;
 			}
 			
 
@@ -196,7 +192,7 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 
 			MODSampleDef* instrument = &(tracker->module.samples[chan->instrument]);
 
-			if(chan->sample_offset >= (instrument->sample_length)){ //(instrument->repeat_offset + instrument->repeat_length)
+			if(chan->sample_offset >= instrument->sample_length) { //(instrument->repeat_offset + instrument->repeat_length)
 				if (instrument->repeat_length > 1)
 				{
 					//if loop length is more than 1, the sample loops (0 supposedly is unsupported but there's no docs)
