@@ -91,7 +91,7 @@ void tracker_close_mod(ModTracker* tracker){
 void tracker_mod_tick(ModTracker* tracker){
 	int ch;
 	uint8_t prev_instrument;
-	uint8_t instrument, effect;
+	uint8_t instrument, effect, effect_args;
 	uint32_t note, period;
 
 	if(tracker->_tick_timer >= tracker->_updates_per_tick){
@@ -104,8 +104,11 @@ void tracker_mod_tick(ModTracker* tracker){
 				period = (note & 0x0FFF0000) >> 16;
 				prev_instrument = tracker->channels[ch].instrument; 
 				effect = (note & 0x00000F00) >> 8;
+				effect_args = (note & 0x000000FF);
 				tracker->channels[ch].effect = effect;
-				tracker->channels[ch].effect_args = (note & 0x000000FF);
+
+				if (effect_args != 0)
+					tracker->channels[ch].effect_args = effect_args;
 
 				if(instrument > 0 && instrument < 32){
 					tracker->channels[ch].instrument = instrument - 1;

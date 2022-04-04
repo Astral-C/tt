@@ -55,9 +55,19 @@ void tone_porta(ModTracker* tracker, Channel* chan)
 	if(tracker->_current_ticks > 0 && chan->period != chan->porta_period)
 	{
 		if (chan->porta_period > chan->period)
+		{
 			chan->period += chan->effect_args;
+
+			if (chan->period > chan->porta_period)
+				chan->period = chan->porta_period;
+		}
 		else
+		{
 			chan->period -= chan->effect_args;
+
+			if (chan->period < chan->porta_period)
+				chan->period = chan->porta_period;
+		}
 	}
 }
 
