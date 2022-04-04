@@ -35,7 +35,7 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 
 	fread(&tracker->module.song_length, sizeof(tracker->module.song_length), 1, mod_file); //length in patterns
 	fread(&tracker->module.old_tracker_force, sizeof(tracker->module.old_tracker_force), 1, mod_file);
-	fread(&tracker->module.song_positions, 128, 1, mod_file);
+	fread(&tracker->module.song_positions, 1, 128, mod_file);
 	fread(&tracker->module.signature, sizeof(tracker->module.signature), 1, mod_file);
 	
 	for(i = 0; i < 128; i++){
@@ -96,9 +96,10 @@ void tracker_mod_tick(ModTracker* tracker){
 
 	if(tracker->_tick_timer >= tracker->_updates_per_tick){
 		if(tracker->_current_ticks >= tracker->speed){
-
+			//printf("row update: tick %u\n", tracker->_current_ticks);
+			
 			for (ch = 0; ch < 4; ch++){
-				note = swap32(tracker->module.patterns[tracker->module.song_positions[tracker->current_pattern]].rows[ch][tracker->current_row]);
+				note = swap32(tracker->module.patterns[tracker->module.song_positions[tracker->current_pattern]].rows[tracker->current_row][ch]);
 				instrument = (note & 0xF0000000) >> 24 | (note & 0x0000F000) >> 12;	
 				period = (note & 0x0FFF0000) >> 16;
 				prev_instrument = tracker->channels[ch].instrument; 
@@ -113,6 +114,8 @@ void tracker_mod_tick(ModTracker* tracker){
 
 					if(instrument != prev_instrument)
 						tracker->channels[ch].sample_offset = 0;
+
+					//printf("Channel %u set instrument to %u (row %u, pattern %u)\n", ch, instrument, tracker->current_row, tracker->current_pattern);
 				}
 
 				if(period > 0){
@@ -121,12 +124,14 @@ void tracker_mod_tick(ModTracker* tracker){
 						tracker->channels[ch].period = period; 
 					
 					tracker->channels[ch].porta_period = period;
+
+					//printf("Channel %u set period to %u (row %u, pattern %u)\n", ch, period, tracker->current_row, tracker->current_pattern);
 				}
 
-				if (tracker->channels[ch].effect > 0x0F)
+				/*if (effect != 0x00 && tracker->channels[ch].effect_args != 0x00)
 				{
-					printf("effect OOB!: %x\n", tracker->channels[ch].effect);
-				}
+					printf("Channel %u Calling effect %x with params %x\n", ch, effect, tracker->channels[ch].effect_args);
+				}*/
 			}
 			
 

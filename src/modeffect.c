@@ -339,9 +339,9 @@ void set_speed_tempo(ModTracker* tracker, Channel* chan)
 {
 	printf("set tempo/speed\n");
 	if(tracker->_current_ticks == 0){
-		if(chan->effect_args <= 0x1F){
+		if(chan->effect_args <= 0x1F && chan->effect_args != 0x00){
 			tracker->speed = chan->effect_args;
-		} else if(chan->effect_args > 0x1F && chan->effect_args < 0xFF){
+		} else if(chan->effect_args >= 0x20 && chan->effect_args <= 0xFF){
 			tracker->bpm = chan->effect_args;
 			tracker->_updates_per_tick = tracker->_sample_rate * 2.5 / tracker->bpm; 
 		}
