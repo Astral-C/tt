@@ -68,12 +68,14 @@ void vibrato(ModTracker* tracker, Channel* chan)
 
 void vol_slide_tone_porta(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	vol_slide(tracker, chan);
+	tone_porta(tracker, chan);
 }
 
 void vol_slide_vibrato(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	vol_slide(tracker, chan);
+	vibrato(tracker, chan);
 }
 
 void tremolo(ModTracker* tracker, Channel* chan)
@@ -84,7 +86,11 @@ void tremolo(ModTracker* tracker, Channel* chan)
 //FT2 extension
 void set_panning(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	printf("set pan to %x\n", chan->effect_args);
+	chan->pan = chan->effect_args;
+	
+	chan->effect = 0x00;
+	chan->effect_args = 0x00;
 }
 
 void sample_offset(ModTracker* tracker, Channel* chan)
@@ -137,7 +143,7 @@ void Exx_effect(ModTracker* tracker, Channel* chan)
 		}
 		case 0x02:
 		{
-			//E1x
+			//E2x
 			fine_porta_down(tracker, chan);
 			break;
 		}
@@ -242,7 +248,21 @@ void set_finetune(ModTracker* tracker, Channel* chan)
 
 void pattern_loop(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	if (chan->effect_args & 0x0F == 0x00)
+	{
+		//marks the start of the loop
+		tracker->loop_row = tracker->current_row;
+		tracker->loop_count = 0;
+	}
+	else
+	{
+		//if we are on the final tick, we swap rows
+		if (tracker->_current_ticks == tracker->speed && tracker->loop_count < chan->effect_args & 0x0F)
+		{
+			tracker->current_row = tracker->loop_row;
+			tracker->loop_count++;
+		}
+	}
 }
 
 void set_tremolo_waveform(ModTracker* tracker, Channel* chan)
@@ -253,7 +273,11 @@ void set_tremolo_waveform(ModTracker* tracker, Channel* chan)
 //FT2 extension
 void set_panning_rough(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	printf("set pan (rough) to %u\n", chan->effect_args & 0x0F);
+	chan->pan = (chan->effect_args & 0x0F) * 0x0F;
+	
+	chan->effect = 0x00;
+	chan->effect_args = 0x00;
 }
 
 void retrigger(ModTracker* tracker, Channel* chan)
@@ -263,17 +287,37 @@ void retrigger(ModTracker* tracker, Channel* chan)
 
 void fine_vol_slide_up(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	if (tracker->_current_ticks == 0)
+	{
+		chan->volume += chan->effect_args & 0x0F;
+
+		if (chan->volume > 64)
+			chan->volume = 64;
+	}
 }
 
 void fine_vol_slide_down(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	if (tracker->_current_ticks == 0)
+	{
+		chan->volume -= chan->effect_args & 0x0F;
+
+		if (chan->volume < 0)
+			chan->volume = 0;
+	}
 }
 
 void note_cut(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	if (tracker->_current_ticks == (chan->effect_args & 0x0F))
+	{
+		chan->period = 0;
+		chan->sample_offset = 0;
+
+		//only do this once
+		chan->effect = 0;
+		chan->effect_args = 0;
+	}
 }
 
 void note_delay(ModTracker* tracker, Channel* chan)

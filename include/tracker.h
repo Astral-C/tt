@@ -13,6 +13,7 @@ typedef struct {
     double sample_offset;
     uint8_t effect;
     uint8_t effect_args;
+    uint8_t pan;
 } Channel;
 
 typedef struct {
@@ -27,6 +28,10 @@ typedef struct {
     uint16_t current_pattern;
     Channel channels[8]; //playback channels
     MODFile module;
+
+    uint8_t loop_row;
+    uint8_t loop_count;
+
 #ifdef debug_write
     FILE* dump;
 #endif

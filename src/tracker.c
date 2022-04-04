@@ -18,32 +18,34 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 
 	if(tracker == NULL) return 1; //oops
 
-	memset(tracker, 0, sizeof(tracker));
+	memset(tracker, 0, sizeof(ModTracker));
 
 	tracker->bpm = 125; //defaults
 	tracker->speed = 6;
 
 	mod_file = fopen(mod, "rb");
 	fread(&tracker->module.module_name, sizeof(tracker->module.module_name), 1, mod_file);
-	fread(&tracker->module.samples[0], sizeof(tracker->module.samples), 1, mod_file);
-	for (i = 0; i < 32; i++){
+	fread(&tracker->module.samples[0], sizeof(MODSampleDef), 31, mod_file);
+
+	for (i = 0; i < 31; i++){
 		tracker->module.samples[i].sample_length = swap16(tracker->module.samples[i].sample_length);
 		tracker->module.samples[i].repeat_length = swap16(tracker->module.samples[i].repeat_length);
 		tracker->module.samples[i].repeat_offset = swap16(tracker->module.samples[i].repeat_offset);
 	}
-	
 
 	fread(&tracker->module.song_length, sizeof(tracker->module.song_length), 1, mod_file); //length in patterns
 	fread(&tracker->module.old_tracker_force, sizeof(tracker->module.old_tracker_force), 1, mod_file);
 	fread(&tracker->module.song_positions, 128, 1, mod_file);
 	fread(&tracker->module.signature, sizeof(tracker->module.signature), 1, mod_file);
 	
-
 	for(i = 0; i < 128; i++){
 		if(tracker->module.song_positions[i] > tracker->module.pattern_count){
 			tracker->module.pattern_count = tracker->module.song_positions[i];
 		}
 	}
+
+	//The playlist only contains the highest index of the pattern; we'll add one to get the count
+	tracker->module.pattern_count++;
 
 	tracker->module.patterns = malloc(sizeof(MODPattern) * tracker->module.pattern_count);
 	
@@ -89,27 +91,34 @@ void tracker_close_mod(ModTracker* tracker){
 void tracker_mod_tick(ModTracker* tracker){
 	int ch;
 	uint8_t prev_instrument;
-	uint8_t instrument;
+	uint8_t instrument, effect;
 	uint32_t note, period;
 
 	if(tracker->_tick_timer >= tracker->_updates_per_tick){
 		if(tracker->_current_ticks >= tracker->speed){
+
 			for (ch = 0; ch < 4; ch++){
 				note = swap32(tracker->module.patterns[tracker->module.song_positions[tracker->current_pattern]].rows[ch][tracker->current_row]);
 				instrument = (note & 0xF0000000) >> 24 | (note & 0x0000F000) >> 12;	
 				period = (note & 0x0FFF0000) >> 16;
 				prev_instrument = tracker->channels[ch].instrument; 
-				
-				if(instrument > 0 && instrument < 32){
-					tracker->channels[ch].instrument = instrument - 1;
-				}
-				if(period > 0){
-					tracker->channels[ch].period = period; 
-					tracker->channels[ch].porta_period = period;
-				}
-				tracker->channels[ch].effect = (note & 0x00000F00) >> 8;
+				effect = (note & 0x00000F00) >> 8;
+				tracker->channels[ch].effect = effect;
 				tracker->channels[ch].effect_args = (note & 0x000000FF);
 				tracker->channels[ch].volume = tracker->module.samples[tracker->channels[ch].instrument].volume;
+
+				if(instrument > 0 && instrument < 32){
+					tracker->channels[ch].instrument = instrument - 1;
+					tracker->channels[ch].pan = 0x80; //reset pan to middle
+				}
+
+				if(period > 0){
+					//Effects 3xx and 5xx (toneporta and volslide + toneporta) override period assignment
+					if (effect != 0x03 && effect != 0x05)
+						tracker->channels[ch].period = period; 
+					
+					tracker->channels[ch].porta_period = period;
+				}
 
 				/*if (tracker->channels[ch].effect != 0)
 				{
@@ -180,15 +189,18 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 			if(tracker->module.sample_data[chan->instrument] == NULL) continue;
 			
 			int16_t sample = (int16_t)tracker->module.sample_data[chan->instrument][(uint32_t)chan->sample_offset];
-			samp_l += sample * chan->volume;
-			samp_r += sample * chan->volume;
+			samp_l += (sample * chan->volume * (0xFF - chan->pan)) / 0xFF;
+			samp_r += (sample * chan->volume * chan->pan) / 0xFF;
 
 			chan->sample_offset += freq;
-			if(chan->sample_offset >= tracker->module.samples[chan->instrument].sample_length){
-				if (tracker->module.samples[chan->instrument].repeat_length > 1)
+
+			MODSampleDef* instrument = &(tracker->module.samples[chan->instrument]);
+
+			if(chan->sample_offset >= (instrument->sample_length)){ //(instrument->repeat_offset + instrument->repeat_length)
+				if (instrument->repeat_length > 1)
 				{
 					//if loop length is more than 1, the sample loops (0 supposedly is unsupported but there's no docs)
-					chan->sample_offset = tracker->module.samples[chan->instrument].repeat_offset + fmod(chan->sample_offset, tracker->module.samples[chan->instrument].repeat_length);
+					chan->sample_offset = instrument->repeat_offset + fmod(chan->sample_offset, instrument->repeat_length);
 				}
 				else
 				{
