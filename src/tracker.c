@@ -52,7 +52,7 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 	fread(&tracker->module.patterns[0], sizeof(MODPattern), tracker->module.pattern_count, mod_file);
 
 	//read sample data
-	for(i = 0; i < 32; i++){
+	for(i = 0; i < 31; i++){
 		MODSampleDef* def = &tracker->module.samples[i];
 		def->sample_length *= 2;
 		def->repeat_offset *= 2;
@@ -78,7 +78,7 @@ void tracker_close_mod(ModTracker* tracker){
 	if(tracker == NULL) return;
 	if(tracker->module.patterns != NULL) free(tracker->module.patterns);
 
-	for(i = 0; i < 32; i++){
+	for(i = 0; i < 31; i++){
 		if(tracker->module.sample_data[i] != NULL && tracker->module.samples[i].sample_length > 0){
 			free(tracker->module.sample_data[i]);
 		}
