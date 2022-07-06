@@ -1,5 +1,13 @@
 #include "modeffect.h"
 
+//From FireLight Mod documentation
+const uint8_t sine_table[32] = {
+	   0, 24, 49, 74, 97,120,141,161,
+	 180,197,212,224,235,244,250,253,
+	 255,253,250,244,235,224,212,197,
+	 180,161,141,120, 97, 74, 49, 24
+};
+
 const void(*effect_list[0x10])(ModTracker* tracker, Channel* chan) = 
 {
 	arpeggio,//0xy 
@@ -73,7 +81,16 @@ void tone_porta(ModTracker* tracker, Channel* chan)
 
 void vibrato(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	//to do: implement more than just sine
+
+	uint16_t vib = (sine_table[chan->vibrato_pos] * (chan->effect_args & 0x0F)) >> 7;
+	chan->vibrato = (chan->vibrato_neg ? -vib : vib);
+	chan->vibrato_pos += (chan->effect_args & 0xF);
+	//printf("Applying vibrato, current sine is %d, adding %d to position...\n", (chan->vibrato_neg ? -vib : vib), (chan->effect_args & 0xF0) >> 4);
+	if(chan->vibrato_pos > 31){
+		chan->vibrato_neg = !chan->vibrato_neg;
+		chan->vibrato_pos = 0;
+	}
 }
 
 void vol_slide_tone_porta(ModTracker* tracker, Channel* chan)
@@ -253,7 +270,8 @@ void set_vib_waveform(ModTracker* tracker, Channel* chan)
 
 void set_finetune(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	int8_t finetune = (chan->effect_args & 0x0F);
+	tracker->module.samples[chan->instrument].finetune = (finetune > 7 ? finetune - 16 : finetune);
 }
 
 void pattern_loop(ModTracker* tracker, Channel* chan)
@@ -347,7 +365,7 @@ void invert_loop(ModTracker* tracker, Channel* chan)
 
 void set_speed_tempo(ModTracker* tracker, Channel* chan)
 {
-	printf("set tempo/speed\n");
+	//printf("set tempo/speed\n");
 	if(tracker->_current_ticks == 0){
 		if(chan->effect_args <= 0x1F && chan->effect_args != 0x00){
 			tracker->speed = chan->effect_args;

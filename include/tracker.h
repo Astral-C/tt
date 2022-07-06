@@ -14,6 +14,9 @@ typedef struct {
     uint8_t effect;
     uint8_t effect_args;
     uint8_t pan;
+    uint8_t vibrato_neg;
+    uint8_t vibrato_pos;
+    int8_t vibrato;
 } Channel;
 
 typedef struct {

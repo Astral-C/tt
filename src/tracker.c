@@ -57,7 +57,7 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 		def->sample_length *= 2;
 		def->repeat_offset *= 2;
 		def->repeat_length *= 2;
-		def->finetune <<= 4;
+		def->finetune &= 0b00001111;
 
 		tracker->module.sample_data[i] = malloc(def->sample_length);
 		fread(tracker->module.sample_data[i], 1, def->sample_length, mod_file);
@@ -119,6 +119,7 @@ void tracker_mod_tick(ModTracker* tracker){
 						tracker->channels[ch].sample_offset = 0;
 
 					//printf("Channel %u set instrument to %u (row %u, pattern %u)\n", ch, instrument, tracker->current_row, tracker->current_pattern);
+
 				}
 
 				if(period > 0){
@@ -127,6 +128,7 @@ void tracker_mod_tick(ModTracker* tracker){
 						tracker->channels[ch].period = period; 
 					
 					tracker->channels[ch].porta_period = period;
+					tracker->channels[ch].sample_offset = 0;
 
 					//printf("Channel %u set period to %u (row %u, pattern %u)\n", ch, period, tracker->current_row, tracker->current_pattern);
 				}
@@ -189,7 +191,9 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 		for (ch = 0; ch < 4; ch++){
 			chan = &tracker->channels[ch];
 			if(chan->period == 0 || chan->volume == 0) continue;
-			double freq = (((8363.0 * 428.0) / chan->period) / tracker->_sample_rate);
+			double freq = (((8363.0 * 428.0) / chan->period * (pow(1.007246412, -tracker->module.samples[chan->instrument].finetune))) / tracker->_sample_rate);
+
+			//move this up for speed?
 			if(tracker->module.sample_data[chan->instrument] == NULL) continue;
 			
 			int16_t sample = (int16_t)tracker->module.sample_data[chan->instrument][(uint32_t)chan->sample_offset];
@@ -200,8 +204,8 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 
 			MODSampleDef* instrument = &(tracker->module.samples[chan->instrument]);
 
-			if(chan->sample_offset >= instrument->sample_length) { //(instrument->repeat_offset + instrument->repeat_length)
-				if (instrument->repeat_length > 1)
+			if(chan->sample_offset > instrument->sample_length) { //(instrument->repeat_offset + instrument->repeat_length)
+				if (instrument->repeat_length > 2)
 				{
 					//if loop length is more than 1, the sample loops (0 supposedly is unsupported but there's no docs)
 					chan->sample_offset = instrument->repeat_offset + fmod(chan->sample_offset, instrument->repeat_length);
