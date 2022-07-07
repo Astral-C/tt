@@ -148,7 +148,7 @@ void pos_jump(ModTracker* tracker, Channel* chan)
 
 void set_volume(ModTracker* tracker, Channel* chan)
 {
-	chan->volume = chan->effect_args & 64;
+	chan->volume = chan->effect_args;
 }
 
 void pattern_break(ModTracker* tracker, Channel* chan)

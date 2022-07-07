@@ -9,6 +9,7 @@ CMakeFiles
 
 # module files
 *.mod
+mod.*
 
 # sample dumps
 Sample_*

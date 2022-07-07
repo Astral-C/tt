@@ -213,7 +213,7 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 				else
 				{
 					//no loop; stop note
-					chan->period = 0;
+					chan->volume = 0;
 					chan->sample_offset = 0;
 				}
 			}
