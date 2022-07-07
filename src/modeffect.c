@@ -38,6 +38,7 @@ void dummy_effect(ModTracker* tracker, Channel* chan)
 void arpeggio(ModTracker* tracker, Channel* chan)
 {
 	//to do
+	//printf("Pat %d - Row %d: Arpeggio not implemented\n", tracker->current_pattern, tracker->current_row);
 }
 
 void porta_up(ModTracker* tracker, Channel* chan)
@@ -84,9 +85,8 @@ void vibrato(ModTracker* tracker, Channel* chan)
 	//to do: implement more than just sine
 
 	uint16_t vib = (sine_table[chan->vibrato_pos] * (chan->effect_args & 0x0F)) >> 7;
-	chan->vibrato = (chan->vibrato_neg ? -vib : vib);
+	chan->period = chan->note + (chan->vibrato_neg ? -vib : vib);
 	chan->vibrato_pos += (chan->effect_args & 0xF);
-	//printf("Applying vibrato, current sine is %d, adding %d to position...\n", (chan->vibrato_neg ? -vib : vib), (chan->effect_args & 0xF0) >> 4);
 	if(chan->vibrato_pos > 31){
 		chan->vibrato_neg = !chan->vibrato_neg;
 		chan->vibrato_pos = 0;
@@ -108,6 +108,7 @@ void vol_slide_vibrato(ModTracker* tracker, Channel* chan)
 void tremolo(ModTracker* tracker, Channel* chan)
 {
 	//to do
+	printf("Pat %d - Row %d: tremolo not implemented\n", tracker->current_pattern, tracker->current_row);
 }
 
 //FT2 extension
@@ -143,7 +144,10 @@ void vol_slide(ModTracker* tracker, Channel* chan)
 
 void pos_jump(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	tracker->current_pattern = chan->effect_args;
+	if(tracker->current_pattern > tracker->module.song_length){
+		tracker->current_pattern = tracker->module.song_length;
+	}
 }
 
 void set_volume(ModTracker* tracker, Channel* chan)
@@ -153,7 +157,16 @@ void set_volume(ModTracker* tracker, Channel* chan)
 
 void pattern_break(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	tracker->current_pattern++;
+	if(tracker->current_pattern > tracker->module.song_length){
+		tracker->current_pattern = 0;
+	}
+	
+	if(chan->effect_args >= 64){
+		tracker->current_row = 0;
+	} else {
+		tracker->current_row = chan->effect_args;
+	}
 }
 
 void Exx_effect(ModTracker* tracker, Channel* chan)
@@ -255,17 +268,26 @@ void Exx_effect(ModTracker* tracker, Channel* chan)
 
 void fine_porta_up(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	if(tracker->_current_ticks == 0 && chan->period > 133)
+	{
+		chan->period -= chan->effect_args;
+		if(chan->period < 133) chan->period = 133;
+	}
 }
 
 void fine_porta_down(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	if(tracker->_current_ticks == 0 && chan->period > 856)
+	{
+		chan->period += chan->effect_args;
+		if(chan->period < 856) chan->period = 856;
+	}
 }
 
 void set_vib_waveform(ModTracker* tracker, Channel* chan)
 {
 	//to do
+	printf("Pat %d - Row %d: Set Vibrato Waveform not implemented\n", tracker->current_pattern, tracker->current_row);
 }
 
 void set_finetune(ModTracker* tracker, Channel* chan)
@@ -296,6 +318,7 @@ void pattern_loop(ModTracker* tracker, Channel* chan)
 void set_tremolo_waveform(ModTracker* tracker, Channel* chan)
 {
 	//to do
+	printf("Pat %d - Row %d: Set Tremolo Waveform not implemented\n", tracker->current_pattern, tracker->current_row);
 }
 
 //FT2 extension
@@ -310,7 +333,9 @@ void set_panning_rough(ModTracker* tracker, Channel* chan)
 
 void retrigger(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	if((tracker->_current_ticks % (chan->effect_args & 0x0F)) == 0){
+		chan->sample_offset = 0;
+	}
 }
 
 void fine_vol_slide_up(ModTracker* tracker, Channel* chan)
@@ -350,17 +375,24 @@ void note_cut(ModTracker* tracker, Channel* chan)
 
 void note_delay(ModTracker* tracker, Channel* chan)
 {
-	//to do
+	printf("note delay\n");
+	if(tracker->_current_ticks < chan->effect_args & 0x0F){
+		chan->period = 0;
+	} else if(tracker->_current_ticks == chan->effect_args & 0x0F){
+		chan->period = chan->note;
+	}
 }
 
 void pattern_delay(ModTracker* tracker, Channel* chan)
 {
 	//to do
+	printf("Pat %d - Row %d: pattern delay not implemented\n", tracker->current_pattern, tracker->current_row);
 }
 
 void invert_loop(ModTracker* tracker, Channel* chan)
 {
 	//to do
+	printf("Pat %d - Row %d: invert loop not implemented\n", tracker->current_pattern, tracker->current_row);
 }
 
 void set_speed_tempo(ModTracker* tracker, Channel* chan)

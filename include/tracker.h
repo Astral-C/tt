@@ -8,6 +8,7 @@
 typedef struct {
     uint8_t instrument;
     int8_t volume;
+    uint32_t note;
     uint32_t period;
     uint32_t porta_period;
     double sample_offset;
@@ -16,7 +17,6 @@ typedef struct {
     uint8_t pan;
     uint8_t vibrato_neg;
     uint8_t vibrato_pos;
-    int8_t vibrato;
 } Channel;
 
 typedef struct {

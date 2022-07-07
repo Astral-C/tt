@@ -59,6 +59,7 @@ uint8_t tracker_open_mod(ModTracker* tracker, char* mod){
 		def->repeat_length *= 2;
 		def->finetune &= 0b00001111;
 
+		if(def->sample_length <= 0) continue;
 		tracker->module.sample_data[i] = malloc(def->sample_length);
 		fread(tracker->module.sample_data[i], 1, def->sample_length, mod_file);
 	}
@@ -125,6 +126,7 @@ void tracker_mod_tick(ModTracker* tracker){
 				if(period > 0){
 					//Effects 3xx and 5xx (toneporta and volslide + toneporta) override period assignment
 					if (effect != 0x03 && effect != 0x05)
+						tracker->channels[ch].note = period;
 						tracker->channels[ch].period = period; 
 					
 					tracker->channels[ch].porta_period = period;
@@ -156,6 +158,7 @@ void tracker_mod_tick(ModTracker* tracker){
 			Channel* chan = &tracker->channels[ch];
 			
 			//Call effect from effect_list
+			if(chan->effect == 0 && chan->effect_args == 0) continue;
 			(*effect_list[chan->effect])(tracker, chan);
 		}
 
@@ -213,7 +216,7 @@ void tracker_mod_update(ModTracker* tracker, int16_t* buffer, uint32_t buf_size)
 				else
 				{
 					//no loop; stop note
-					chan->volume = 0;
+					chan->period = 0;
 					chan->sample_offset = 0;
 				}
 			}

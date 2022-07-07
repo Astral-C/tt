@@ -3,21 +3,24 @@
 #include <SDL2/SDL_audio.h>
 #include "tracker.h"
 
-static ModTracker* mod_tracker = NULL;
+static ModTracker *mod_tracker = NULL;
 
-void audio_update(void* userdata, uint8_t* stream, int len){
+void audio_update(void *userdata, uint8_t *stream, int len)
+{
 
 	len /= sizeof(int16_t);
-	tracker_mod_update(mod_tracker, (int16_t*)stream, (uint32_t)len);
+	tracker_mod_update(mod_tracker, (int16_t *)stream, (uint32_t)len);
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char *argv[])
+{
 
-	mod_tracker = (ModTracker*)malloc(sizeof(ModTracker));
+	mod_tracker = (ModTracker *)malloc(sizeof(ModTracker));
 
 	SDL_Init(SDL_INIT_AUDIO);
 
-	if(argc < 2) return 1;
+	if (argc < 2)
+		return 1;
 	tracker_open_mod(mod_tracker, argv[1]);
 
 	SDL_AudioSpec target_format;
@@ -43,14 +46,17 @@ int main(int argc, char* argv[]){
 	SDL_PauseAudioDevice(dev, 0);
 
 	uint8_t quit = 0;
-	while(!quit){
+	while (!quit)
+	{
 		quit = (getchar() == 'q');
 	}
 
 	SDL_CloseAudioDevice(dev);
+	SDL_Quit();
 	tracker_close_mod(mod_tracker);
 
 	free(mod_tracker);
+
 
 	return 0;
 }
