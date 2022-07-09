@@ -108,7 +108,7 @@ void tracker_mod_tick(ModTracker* tracker){
 				effect_args = (note & 0x000000FF);
 				tracker->channels[ch].effect = effect;
 
-				if (effect_args != 0)
+				if (effect == 0x0D || effect_args != 0)
 					tracker->channels[ch].effect_args = effect_args;
 
 				if(instrument > 0 && instrument < 32){

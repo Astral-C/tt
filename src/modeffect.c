@@ -157,15 +157,17 @@ void set_volume(ModTracker* tracker, Channel* chan)
 
 void pattern_break(ModTracker* tracker, Channel* chan)
 {
-	tracker->current_pattern++;
-	if(tracker->current_pattern > tracker->module.song_length){
-		tracker->current_pattern = 0;
-	}
-	
-	if(chan->effect_args >= 64){
-		tracker->current_row = 0;
-	} else {
-		tracker->current_row = chan->effect_args;
+	if(tracker->_current_ticks == tracker->speed-1){
+		tracker->current_pattern++;
+		if(tracker->current_pattern > tracker->module.song_length){
+			tracker->current_pattern = 0;
+		}
+		
+		
+		tracker->current_row = (((chan->effect_args & 0xF0) >> 4) * 10) + (chan->effect_args & 0x0F) - 1;
+		if(tracker->current_row >= 64){
+			tracker->current_row = 0;
+		}
 	}
 }
 
@@ -403,8 +405,9 @@ void set_speed_tempo(ModTracker* tracker, Channel* chan)
 			tracker->speed = chan->effect_args;
 		} else if(chan->effect_args >= 0x20 && chan->effect_args <= 0xFF){
 			tracker->bpm = chan->effect_args;
-			tracker->_updates_per_tick = tracker->_sample_rate * 2.5 / tracker->bpm; 
+			tracker->_updates_per_tick = tracker->_sample_rate * 2.5 / (chan->effect_args);
 		}
+
 
 		//only do this once
 		chan->effect = 0;
